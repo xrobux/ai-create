@@ -1,1 +1,68 @@
+from moviepy.editor import VideoFileClip, concatenate_videoclips, TextClip, CompositeVideoClip, AudioFileClip
+from gtts import gTTS
+import os
+
+# Function to create a video clip with text overlay
+def create_text_clip(text, duration, size, position, fontsize=24, color='white'):
+    text_clip = TextClip(text, fontsize=fontsize, color=color, size=size)
+    text_clip = text_clip.set_duration(duration).set_position(position)
+    return text_clip
+
+# Function to generate narration audio
+def generate_audio(text, filename):
+    tts = gTTS(text=text, lang='en')
+    tts.save(filename)
+
+# Paths to video clips and audio files
+video_clips = ['clip1.mp4', 'clip2.mp4', 'clip3.mp4']
+audio_file = 'background.mp3'
+
+# Load video clips
+clips = [VideoFileClip(clip) for clip in video_clips]
+
+# Concatenate video clips
+final_clip = concatenate_videoclips(clips, method='compose')
+
+# Add text overlays
+text_clips = [
+    create_text_clip("Welcome to my video!", 5, final_clip.size, 'center'),
+    create_text_clip("Enjoy the show!", 5, final_clip.size, 'center')
+]
+
+# Add text clips to the video
+final_video = CompositeVideoClip([final_clip] + text_clips)
+
+# Generate and add narration audio
+narration_text = "Welcome to my video! Enjoy the show!"
+audio_filename = "narration.mp3"
+generate_audio(narration_text, audio_filename)
+narration_audio = AudioFileClip(audio_filename)
+
+# Set audio (optional: add background music as well)
+background_audio = AudioFileClip(audio_file).subclip(0, final_video.duration)
+final_audio = CompositeAudioClip([background_audio, narration_audio.set_start(0)])
+final_video = final_video.set_audio(final_audio)
+
+# Output the final video
+output_filename = 'final_video.mp4'
+final_video.write_videofile(output_filename, codec='libx264')
+
+# Clean up
+os.remove(audio_filename)
+import openai
+
+# Setup OpenAI API
+openai.api_key = 'your-openai-api-key'
+
+def generate_script(prompt):
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=100
+    )
+    return response.choices[0].text.strip()
+
+# Example usage
+script_text = generate_script("Create a script for a 10-second video on how to stay motivated.")
+print(script_text)
 
